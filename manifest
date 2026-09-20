@@ -16,4 +16,4 @@ ctl_stop=true
 checkport=false
 disable_authorization_path=true
 install_dep_apps=nodejs_v22
-changelog=移动端返回键优先关闭最上层弹窗；房间文件支持无限级目录和树状选择；文件管理上传不再发送聊天气泡，并按文件显示进度。
+changelog=修复旧数据库迁移时 parent_id 索引导致应用启动失败；启动日志写入 @apphome，便于排查异常。

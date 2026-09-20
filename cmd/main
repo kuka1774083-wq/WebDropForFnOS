@@ -3,17 +3,25 @@ set -eu
 
 app_dest="${TRIM_APPDEST:-/var/apps/WebDrop/target}"
 pkg_var="${TRIM_PKGVAR:-/var/apps/WebDrop/var}"
+pkg_home="${TRIM_PKGHOME:-/var/apps/WebDrop/home}"
 app_dir="$app_dest"
 [ -f "$app_dir/src/index.js" ] || app_dir="$app_dest/app"
 node_bin="/var/apps/nodejs_v22/target/bin/node"
 [ -x "$node_bin" ] || node_bin="$(command -v node 2>/dev/null || true)"
 pid_file="$pkg_var/webdrop.pid"
-log_file="$pkg_var/webdrop.log"
+log_file="$pkg_home/webdrop.log"
 port="8080"
 [ -f "$pkg_var/webdrop-port" ] && port="$(tr -d '[:space:]' < "$pkg_var/webdrop-port")"
 
-mkdir -p "$pkg_var/config" "$pkg_var/data"
+mkdir -p "$pkg_var/config" "$pkg_var/data" "$pkg_home"
 touch "$log_file"
+
+fail_start() {
+  message="$1"
+  echo "$message" >> "$log_file"
+  echo "$message（日志：$log_file）" > "${TRIM_TEMP_LOGFILE:-/tmp/webdrop-start.log}"
+  exit 1
+}
 
 is_running() {
   [ -r "$pid_file" ] || return 1
@@ -23,9 +31,9 @@ is_running() {
 
 start_process() {
   is_running && return 0
+  : > "$log_file"
   if [ -z "$node_bin" ] || [ ! -x "$node_bin" ] || [ ! -f "$app_dir/src/index.js" ]; then
-    echo "WebDrop 启动失败：未找到 Node.js v22 运行环境或应用入口" >> "$log_file"
-    exit 1
+    fail_start "WebDrop 启动失败：未找到 Node.js v22 运行环境或应用入口"
   fi
   rm -f "$pid_file"
   export WEBDROP_PORT="$port"
@@ -36,7 +44,7 @@ start_process() {
   export WEBDROP_GATEWAY_SOCKET="$app_dest/app.sock"
   (cd "$app_dir" && nohup "$node_bin" src/index.js >> "$log_file" 2>&1 & echo "$!" > "$pid_file")
   sleep 1
-  is_running || { echo "WebDrop 进程启动后立即退出，详见 $log_file" >> "$log_file"; exit 1; }
+  is_running || fail_start "WebDrop 进程启动后立即退出，详见 $log_file"
 }
 
 stop_process() {

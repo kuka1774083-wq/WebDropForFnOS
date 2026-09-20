@@ -82,6 +82,10 @@ async function main() {
       req.url = `${isLoginConfirm ? '/api/auth/fnos/gateway' : '/api/auth/fnos/gateway-prompt'}${url.search}`;
       appHandler(req, res);
     });
+    // 网关仅用于飞牛账号认证；Socket 不可用时仍保持独立端口可访问。
+    gatewayServer.on('error', (error) => {
+      console.error(`WebDrop 飞牛认证网关不可用: ${error.message}`);
+    });
   }
 
   const wss = new WsServer({ httpServer: server, db, cfg, service, hub });
@@ -98,9 +102,7 @@ async function main() {
   server.listen(cfg.port, cfg.host, () => {
     console.log(`WebDrop 已启动: http://${cfg.host}:${cfg.port}`);
   });
-  if (gatewayServer) {
-    gatewayServer.listen(gatewaySocket, () => console.log(`WebDrop 飞牛认证网关已启动: ${gatewaySocket}`));
-  }
+  if (gatewayServer) gatewayServer.listen(gatewaySocket, () => console.log(`WebDrop 飞牛认证网关已启动: ${gatewaySocket}`));
 
   const shutdown = () => {
     console.log('正在关闭...');
