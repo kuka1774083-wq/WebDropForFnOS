@@ -39,30 +39,6 @@ WebDrop 的独立端口继续支持免登录访问。登录页的“使用飞牛
 
 卸载向导默认保留使用记录。选择清除后，会删除数据库、上传文件、聊天记录和配置。
 
----
-
-## 原项目 README
-
-# WebDrop — 网页文件传输工具
-
-WebDrop 是一个无需安装客户端、打开浏览器即可使用的文件传输与聊天工具。支持**点对点（P2P）**与**房间**两种模式，采用 WebSocket + WebRTC DataChannel 实现直连，失败自动回退服务器流式中转（不落盘）；单容器 Docker 部署，配置与数据全部挂载在宿主机上，可轻松私有化部署。
-
-作者主页：[MEMUZE（Bilibili）](https://space.bilibili.com/41158746)
-
-## 效果截图
-
-| 点对点会话 | 房间聊天 |
-| --- | --- |
-| ![P2P 会话]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/p2p-chat.png) | ![房间聊天]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/room-chat.png) |
-
-| 房间文件（缩略图模式） | 管理台仪表盘 |
-| --- | --- |
-| ![房间文件]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/room-files.png) | ![管理台]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/admin.png) |
-
-| 点对点在线列表 | 手机端房间 |
-| --- | --- |
-| ![在线列表]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/p2p-home.png) | ![手机端]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/mobile-room.png) |
-
 ## 功能特性
 
 ### 点对点模式（免登录）
@@ -94,11 +70,11 @@ WebDrop 默认采用新拟物派（Neumorphism）风格，并内置了 6 套风�
 
 | 默认主题（新拟物派） | 暗黑模式 |
 | --- | --- |
-| ![默认主题]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/theme-default.png) | ![暗黑模式]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/theme-dark.png) |
+| ![默认主题]( docs/screenshots/theme-default.png) | ![暗黑模式]( docs/screenshots/theme-dark.png) |
 
 | 孟菲斯风格 | 吉卜力风格 |
 | --- | --- |
-| ![孟菲斯风格]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/theme-memphis.png) | ![吉卜力风格]( https://git.zr97.top/1024/WebDrop/raw/branch/main/docs/screenshots/theme-ghibli.png) |
+| ![孟菲斯风格]( docs/screenshots/theme-memphis.png) | ![吉卜力风格]( docs/screenshots/theme-ghibli.png) |
 
 ### 自制主题
 
@@ -122,186 +98,17 @@ WebDrop 默认采用新拟物派（Neumorphism）风格，并内置了 6 套风�
 - 选中主题包会打开**预览窗口**，渲染各界面效果图并展示版本、作者与描述；
 - 用户可在"跟随全局（默认）/ 指定主题"之间切换；管理员确认后可将主题设为全局默认。
 
-## Docker 部署（推荐）
-
-项目使用单容器架构，只需一条命令即可启动；`config/` 与 `data/` 两个目录绑定挂载到宿主机，数据持久化、升级与迁移都非常简单。
-
-### 方式一：docker compose（推荐）
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/kuka1774083-wq/WebDrop.git
-cd WebDrop
-
-# 2. 启动（首次会自动构建镜像）
-docker compose up -d --build
-
-# 3. 查看状态
-docker compose ps
-```
-
-启动完成后访问 `http://服务器IP:60003`（端口可在 `docker-compose.yml` 中修改），使用 `admin / admin` 登录，首次登录会强制要求修改用户名和密码。
-
-### 方式二：docker run
-
-```bash
-docker build -t webdrop .
-docker run -d --name webdrop --restart always \
-  -p 60003:8080 \
-  -v "$(pwd)/config:/app/config" \
-  -v "$(pwd)/data:/app/data" \
-  webdrop
-```
-
-### 方式三：本地运行（需要手动安装 Node.js ≥ 22.13 及依赖）
-
-```bash
-npm install
-node /src/index.js
-```
-
-### 数据持久化与迁移
-
-| 宿主机目录 | 容器内 | 用途 |
-| --- | --- | --- |
-| `./config` | `/app/config` | 配置文件 `config.json` |
-| `./data` | `/app/data` | SQLite 数据库、房间文件、暂存文件、缩略图/预览、主题包 |
-
-备份、迁移或升级时，只需停止容器并整体复制这两个目录即可：
-
-```bash
-docker compose down
-cp -r config data /backup/   # 或 rsync 到新服务器
-docker compose up -d --build
-```
-
-### 健康检查
-
-镜像内置健康检查，每 30 秒请求 `/api/health`，可通过 `docker inspect webdrop` 查看容器状态；也可在宿主机直接验证：
-
-```bash
-curl http://127.0.0.1:60003/api/health
-# {"ok":true}
-```
-
-### 忘记管理员密码
-
-```bash
-docker compose exec webdrop node scripts/reset-admin.js
-# 默认重置为 admin:admin；也可指定：node scripts/reset-admin.js 新用户名 新密码
-```
-
-重置后旧会话全部失效，需重新登录。
-
-### HTTPS（推荐生产使用）
-
-麦克风语音录制依赖安全上下文（HTTPS 或 localhost）。仓库附带可选 Caddy 反向代理方案：
-
-1. 复制 `Caddyfile.example` 为 `Caddyfile`，将 `your-domain.com` 替换为你的域名；
-2. 在 `docker-compose.yml` 中启用 `tls` profile；
-3. 重新启动：
-
-```bash
-docker compose --profile tls up -d
-```
-
 ## 如何更新
 
-更新前先备份 `config/` 与 `data/` 两个挂载目录（升级不会动它们，但养成习惯更稳妥）。然后拉取最新代码并重建镜像：
+在飞牛应用中心打开“手动安装”，直接选择新版 `WebDrop.fpk` 上传并完成安装即可。升级会保留现有管理员、运行端口、数据和公共主题。
 
-```bash
-# 1. 拉取最新代码
-git pull
+## 运行数据
 
-# 2. 重新构建镜像并重启容器（数据保留在挂载目录中）
-docker compose up -d --build
+应用运行数据固定保存在飞牛应用自己的目录：
 
-# 3. 确认容器健康
-docker compose ps
-curl http://127.0.0.1:60003/api/health
-```
+| 目录 | 用途 |
+| --- | --- |
+| `TRIM_PKGVAR/config/` | WebDrop 配置和管理员凭据 |
+| `TRIM_PKGVAR/data/` | SQLite 数据库、房间文件、聊天记录、上传内容和主题 |
 
-> 如果改过 `docker-compose.yml` 或想强制重建：
->
-> ```bash
-> docker compose down
-> docker compose build --no-cache
-> docker compose up -d
-> ```
-
-### 品牌 NAS / 飞牛 OS（fnOS）等图形化部署注意事项
-
-在群晖、威联通等品牌 NAS 或**飞牛 OS（fnOS）**的 Docker 图形界面中重新构建时，界面可能会直接复用上次构建的旧镜像缓存，导致"重新构建"后运行的仍是旧版本。此时需要在**镜像管理**里找到 WebDrop 对应的旧镜像，点击**清除（清理）**删除它，然后再回到**项目/容器**页面重新选择并**构建**，即可得到最新版本。删除镜像不会影响 `config/` 与 `data/` 挂载目录中的数据。
-
-## GitHub 部署（GHCR 自动构建镜像）
-
-### 自动构建 Docker 镜像（GitHub Container Registry）
-
-仓库内置 GitHub Actions 工作流（`.github/workflows/docker-image.yml`）：每次推送 `main` 分支（或打 `v*` 标签、手动触发）都会自动构建镜像并发布到 GitHub Container Registry：
-
-```text
-ghcr.io/kuka1774083-wq/webdrop
-```
-
-使用自动构建的镜像部署（无需在服务器上克隆源码构建）：
-
-```bash
-docker pull ghcr.io/kuka1774083-wq/webdrop:latest
-docker run -d --name webdrop --restart always \
-  -p 60003:8080 \
-  -v "$(pwd)/config:/app/config" \
-  -v "$(pwd)/data:/app/data" \
-  ghcr.io/kuka1774083-wq/webdrop:latest
-```
-
-docker compose 方式（把 `build: .` 替换为镜像）：
-
-```yaml
-services:
-  webdrop:
-    image: ghcr.io/kuka1774083-wq/webdrop:latest
-    container_name: webdrop
-    restart: always
-    ports:
-      - "60003:8080"
-    volumes:
-      - ./config:/app/config
-      - ./data:/app/data
-```
-
-## 配置
-
-配置文件 `config/config.json`（支持 `WEBDROP_*` 环境变量覆盖，管理后台设置优先）：
-
-| 键 | 默认 | 说明 |
-| --- | --- | --- |
-| `port` | `8080` | 监听端口 |
-| `dataDir` | `./data` | 数据目录 |
-| `storagePath` | `./data/files` | 房间文件存放路径 |
-| `dbPath` | `./data/webdrop.sqlite` | 数据库路径 |
-| `adminUsername` / `adminPassword` | `admin` / `admin` | 首次引导管理员凭据 |
-| `defaultQuotaGb` | `100` | V0 持久配额基准（VIP 每级 +50G） |
-| `maxUploadBytes` | `10737418240` (10G) | 全局最大上传大小 |
-| `heartbeatIntervalMs` | `30000` | WebSocket 心跳间隔 |
-| `heartbeatTimeoutMs` | `120000` | 心跳超时判定下线（选文件时放宽到 5 分钟） |
-| `stagingThresholdBytes` | `10485760` (10M) | P2P 服务器暂存阈值 |
-| `jobIntervalMs` | `60000` | 定时任务周期（过期/销毁/清理） |
-| `tempUserInactiveDays` | `30` | 临时用户不活跃删除天数 |
-
-## 本地开发
-
-需要 Node.js ≥ 22.13：
-
-```bash
-npm install
-npm start        # 默认 http://localhost:8080
-npm test         # 单元 + 集成测试
-npm run test:e2e # 双浏览器 E2E（需本机 Chrome/Edge 或 playwright）
-```
-
-## 技术栈
-
-- 后端：Node.js 22 + `node:sqlite`（SQLite）
-- 前端：原生 JavaScript（无框架），CSS 变量驱动的主题系统
-- 实时通信：WebSocket（ws） + WebRTC DataChannel
-- 部署：单容器 Docker（内置 ffmpeg，用于语音转码）
+卸载时可选择是否清除上述使用记录。
