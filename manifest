@@ -16,4 +16,4 @@ ctl_stop=true
 checkport=false
 disable_authorization_path=true
 install_dep_apps=nodejs_v22
-changelog=移动端返回键优先关闭最上层弹窗；房间文件管理上传不再发送聊天气泡。
+changelog=移动端返回键优先关闭最上层弹窗；房间文件支持无限级目录和树状选择；文件管理上传不再发送聊天气泡，并按文件显示进度。
