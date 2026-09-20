@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+app_dest="${TRIM_APPDEST:-/var/apps/WebDrop/target}"
+pkg_var="${TRIM_PKGVAR:-/var/apps/WebDrop/var}"
+port="8080"
+if [ -f "$pkg_var/webdrop-port" ]; then
+  saved_port="$(tr -d '[:space:]' < "$pkg_var/webdrop-port")"
+  case "$saved_port" in ''|*[!0-9]*) ;; *) port="$saved_port" ;; esac
+fi
+export wizard_webdrop_port="$port"
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)"
+"$script_dir/install_callback"

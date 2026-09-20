@@ -1,0 +1,21 @@
+[
+  {
+    "stepTitle": "运行端口",
+    "items": [
+      {
+        "type": "text",
+        "field": "wizard_webdrop_port",
+        "label": "WebDrop 访问端口",
+        "initValue": "8080",
+        "rules": [
+          { "required": true, "message": "请输入端口" },
+          { "pattern": "^[0-9]{2,5}$", "message": "端口必须是数字" }
+        ]
+      },
+      {
+        "type": "tips",
+        "helpText": "保存后 WebDrop 会以新端口重新启动。管理员账号和密码仅能在安装时设置，不会在这里显示。"
+      }
+    ]
+  }
+]

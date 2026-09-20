@@ -1,0 +1,19 @@
+appname=WebDrop
+version=1.0.0
+display_name=WebDrop
+desc=WebDrop 是一个基于浏览器的文件传输与聊天工具，支持点对点和房间模式。
+source=thirdparty
+platform=all
+maintainer=WebDrop
+maintainer_url=https://github.com/kuka1774083-wq/WebDropForFnOS
+distributor=MEMUZE
+distributor_url=https://space.bilibili.com/41158746?spm_id_from=333.1007.0.0
+os_min_version=1.2.0401
+desktop_uidir=ui
+desktop_applaunchname=WebDrop.main
+service_port=8080
+ctl_stop=true
+checkport=false
+disable_authorization_path=true
+install_dep_apps=nodejs_v22
+changelog=修复同一 WebDrop 标签页刷新时被误判为多开的连接竞态。

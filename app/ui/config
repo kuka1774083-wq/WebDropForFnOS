@@ -1,0 +1,36 @@
+{
+  ".url": {
+    "WebDrop.main": {
+      "title": "WebDrop",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "${wizard_webdrop_port}",
+      "url": "/",
+      "allUsers": true
+    },
+    "WebDrop.admin": {
+      "title": "WebDrop 管理后台",
+      "icon": "images/admin_{0}.png",
+      "type": "iframe",
+      "protocol": "http",
+      "port": "${wizard_webdrop_port}",
+      "url": "/admin",
+      "allUsers": false,
+      "control": {
+        "accessPerm": "readonly"
+      }
+    },
+    "WebDrop.fnosAuth": {
+      "title": "WebDrop 飞牛认证",
+      "icon": "images/icon_{0}.png",
+      "type": "iframe",
+      "protocol": "",
+      "gatewayPrefix": "/app/WebDrop",
+      "gatewaySocket": "app.sock",
+      "url": "/app/WebDrop",
+      "allUsers": true,
+      "noDisplay": true
+    }
+  }
+}

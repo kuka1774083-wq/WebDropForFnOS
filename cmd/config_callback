@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd)"
+"$script_dir/main" stop
+"$script_dir/install_callback"
+"$script_dir/main" start
+exit 0

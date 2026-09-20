@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+
+clear_data="${wizard_clear_data:-${TRIM_WIZARD_CLEAR_DATA:-false}}"
+pkg_var="${TRIM_PKGVAR:-/var/apps/WebDrop/var}"
+if [ "$clear_data" = "true" ]; then
+  rm -rf "$pkg_var/config" "$pkg_var/data" "$pkg_var/webdrop-port"
+fi
+exit 0

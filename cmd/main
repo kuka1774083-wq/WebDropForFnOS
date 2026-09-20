@@ -1,0 +1,58 @@
+#!/bin/sh
+set -eu
+
+app_dest="${TRIM_APPDEST:-/var/apps/WebDrop/target}"
+pkg_var="${TRIM_PKGVAR:-/var/apps/WebDrop/var}"
+app_dir="$app_dest"
+[ -f "$app_dir/src/index.js" ] || app_dir="$app_dest/app"
+node_bin="/var/apps/nodejs_v22/target/bin/node"
+[ -x "$node_bin" ] || node_bin="$(command -v node 2>/dev/null || true)"
+pid_file="$pkg_var/webdrop.pid"
+log_file="$pkg_var/webdrop.log"
+port="8080"
+[ -f "$pkg_var/webdrop-port" ] && port="$(tr -d '[:space:]' < "$pkg_var/webdrop-port")"
+
+mkdir -p "$pkg_var/config" "$pkg_var/data"
+touch "$log_file"
+
+is_running() {
+  [ -r "$pid_file" ] || return 1
+  pid="$(tr -d '[:space:]' < "$pid_file")"
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+start_process() {
+  is_running && return 0
+  if [ -z "$node_bin" ] || [ ! -x "$node_bin" ] || [ ! -f "$app_dir/src/index.js" ]; then
+    echo "WebDrop 启动失败：未找到 Node.js v22 运行环境或应用入口" >> "$log_file"
+    exit 1
+  fi
+  rm -f "$pid_file"
+  export WEBDROP_PORT="$port"
+  export WEBDROP_CONFIG_DIR="$pkg_var/config"
+  export WEBDROP_DATA_DIR="$pkg_var/data"
+  export WEBDROP_STORAGE_PATH="$pkg_var/data/files"
+  export WEBDROP_DB_PATH="$pkg_var/data/webdrop.sqlite"
+  export WEBDROP_GATEWAY_SOCKET="$app_dest/app.sock"
+  (cd "$app_dir" && nohup "$node_bin" src/index.js >> "$log_file" 2>&1 & echo "$!" > "$pid_file")
+  sleep 1
+  is_running || { echo "WebDrop 进程启动后立即退出，详见 $log_file" >> "$log_file"; exit 1; }
+}
+
+stop_process() {
+  if is_running; then
+    pid="$(tr -d '[:space:]' < "$pid_file")"
+    kill "$pid" 2>/dev/null || true
+    i=0
+    while kill -0 "$pid" 2>/dev/null && [ "$i" -lt 10 ]; do sleep 1; i=$((i + 1)); done
+    kill -9 "$pid" 2>/dev/null || true
+  fi
+  rm -f "$pid_file"
+}
+
+case "${1:-}" in
+  start|run|restart|"") start_process ;;
+  stop) stop_process ;;
+  status) is_running && exit 0 || exit 3 ;;
+  *) echo "Unknown command: ${1:-}" > "${TRIM_TEMP_LOGFILE:-$log_file}"; exit 1 ;;
+esac

@@ -1,0 +1,73 @@
+#!/bin/sh
+set -eu
+
+error_file="${TRIM_TEMP_LOGFILE:-/tmp/webdrop-install.log}"
+app_dest="${TRIM_APPDEST:-/var/apps/WebDrop/target}"
+pkg_var="${TRIM_PKGVAR:-/var/apps/WebDrop/var}"
+saved_port=""
+[ -f "$pkg_var/webdrop-port" ] && saved_port="$(tr -d '[:space:]' < "$pkg_var/webdrop-port")"
+port="${wizard_webdrop_port:-${TRIM_WIZARD_WEBDROP_PORT:-${saved_port:-8080}}}"
+admin_username="${wizard_webdrop_admin_username:-${TRIM_WIZARD_WEBDROP_ADMIN_USERNAME:-admin}}"
+admin_password="${wizard_webdrop_admin_password:-${TRIM_WIZARD_WEBDROP_ADMIN_PASSWORD:-admin}}"
+case "$port" in
+  ''|*[!0-9]*) echo "WebDrop 端口必须是数字" > "$error_file"; exit 1 ;;
+esac
+if [ "$port" -lt 1024 ] || [ "$port" -gt 65535 ]; then
+  echo "WebDrop 端口必须在 1024-65535 之间" > "$error_file"
+  exit 1
+fi
+if [ -z "$admin_username" ] || [ -z "$admin_password" ]; then
+  echo "WebDrop 管理员账号和密码不能为空" > "$error_file"
+  exit 1
+fi
+if [ "${#admin_username}" -gt 64 ] || [ "${#admin_password}" -gt 128 ]; then
+  echo "WebDrop 管理员账号或密码过长" > "$error_file"
+  exit 1
+fi
+
+if command -v ss >/dev/null 2>&1 && ss -ltn "sport = :$port" | grep -q LISTEN; then
+  echo "WebDrop 端口 $port 已被占用" > "$error_file"
+  exit 1
+fi
+
+node_bin="/var/apps/nodejs_v22/target/bin/node"
+npm_bin="/var/apps/nodejs_v22/target/bin/npm"
+[ -x "$node_bin" ] || node_bin="$(command -v node 2>/dev/null || true)"
+[ -x "$npm_bin" ] || npm_bin="$(command -v npm 2>/dev/null || true)"
+if [ -z "$node_bin" ] || [ ! -x "$node_bin" ] || [ -z "$npm_bin" ] || [ ! -x "$npm_bin" ]; then
+  echo "未找到 Node.js v22 运行环境，请先安装飞牛 Node.js v22 应用" > "$error_file"
+  exit 1
+fi
+
+app_dir="$app_dest"
+[ -f "$app_dir/package.json" ] || app_dir="$app_dest/app"
+if [ ! -f "$app_dir/package.json" ]; then
+  echo "WebDrop 应用文件不完整" > "$error_file"
+  exit 1
+fi
+mkdir -p "$pkg_var/config" "$pkg_var/data"
+
+if [ ! -f "$pkg_var/config/config.json" ] && [ -f "$app_dir/config/config.json" ]; then
+  cp "$app_dir/config/config.json" "$pkg_var/config/config.json"
+  # 使用 Node 的 JSON 序列化写入向导值，避免账号或密码中的特殊字符
+  # 损坏配置文件。只在首次安装写入，升级和重启不会覆盖既有管理员。
+  WEBDROP_SETUP_ADMIN_USERNAME="$admin_username" WEBDROP_SETUP_ADMIN_PASSWORD="$admin_password" \
+    "$node_bin" -e '
+      const fs = require("fs");
+      const file = process.argv[1];
+      const cfg = JSON.parse(fs.readFileSync(file, "utf8"));
+      cfg.adminUsername = process.env.WEBDROP_SETUP_ADMIN_USERNAME;
+      cfg.adminPassword = process.env.WEBDROP_SETUP_ADMIN_PASSWORD;
+      fs.writeFileSync(file, `${JSON.stringify(cfg, null, 2)}\n`, { mode: 0o600 });
+    ' "$pkg_var/config/config.json"
+  chmod 600 "$pkg_var/config/config.json"
+fi
+
+if [ ! -d "$app_dir/node_modules/ws" ]; then
+  (cd "$app_dir" && "$npm_bin" install --omit=dev --no-audit --no-fund) >> "$error_file" 2>&1 || {
+    echo "WebDrop 依赖安装失败，请检查网络和 Node.js v22 运行环境" > "$error_file"
+    exit 1
+  }
+fi
+printf '%s\n' "$port" > "$pkg_var/webdrop-port"
+exit 0

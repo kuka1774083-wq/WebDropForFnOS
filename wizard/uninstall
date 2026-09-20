@@ -1,0 +1,21 @@
+[
+  {
+    "stepTitle": "卸载选项",
+    "items": [
+      {
+        "type": "radio",
+        "field": "wizard_clear_data",
+        "label": "是否清除使用记录",
+        "initValue": "false",
+        "options": [
+          { "label": "保留使用记录和配置", "value": "false" },
+          { "label": "清除全部使用记录和配置", "value": "true" }
+        ]
+      },
+      {
+        "type": "tips",
+        "helpText": "清除操作会删除 WebDrop 的数据库、上传文件、聊天记录和配置，且无法恢复。"
+      }
+    ]
+  }
+]
