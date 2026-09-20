@@ -16,4 +16,4 @@ ctl_stop=true
 checkport=false
 disable_authorization_path=true
 install_dep_apps=nodejs_v22
-changelog=修复同一 WebDrop 标签页刷新时被误判为多开的连接竞态。
+changelog=移动端返回键优先关闭最上层弹窗；房间文件管理上传不再发送聊天气泡。
