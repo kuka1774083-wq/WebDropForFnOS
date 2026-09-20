@@ -1,5 +1,5 @@
 appname=WebDrop
-version=1.0.0
+version=1.0.1
 display_name=WebDrop
 desc=WebDrop 是一个基于浏览器的文件传输与聊天工具，支持点对点和房间模式。
 source=thirdparty

@@ -18,7 +18,33 @@ function sessionUser(user, mustChange = false) {
   };
 }
 
-function gatewayLoginContext(req, cfg) {
+function headerHostname(value) {
+  const host = String(value || '').split(',')[0].trim();
+  if (!host) return '';
+  try {
+    return new URL(`http://${host}`).hostname.toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+function siblingSubdomain(hostname, gatewayHostname) {
+  // 仅放宽同一可控主域下的不同子域，例如 nas.example.com 与 drop.example.com。
+  // IP、localhost 和二级域名本身不会走这条规则。
+  const hostParts = String(hostname).toLowerCase().split('.').filter(Boolean);
+  const gatewayParts = String(gatewayHostname).toLowerCase().split('.').filter(Boolean);
+  return hostParts.length >= 3 && gatewayParts.length >= 3
+    && hostParts.slice(-2).join('.') === gatewayParts.slice(-2).join('.');
+}
+
+function trustedOrigins(cfg) {
+  const configured = Array.isArray(cfg.fnosTrustedOrigins)
+    ? cfg.fnosTrustedOrigins
+    : String(cfg.fnosTrustedOrigins || '').split(',');
+  return new Set(configured.map((origin) => String(origin).trim()).filter(Boolean));
+}
+
+export function gatewayLoginContext(req, cfg) {
   if (req.isFnosGateway !== true) {
     return { status: 403, error: '飞牛认证仅可通过统一网关访问' };
   }
@@ -31,16 +57,18 @@ function gatewayLoginContext(req, cfg) {
   } catch {
     return { status: 400, error: '飞牛认证回调地址无效' };
   }
-  if (!['http:', 'https:'].includes(callback.protocol) || Number(callback.port || 0) !== Number(cfg.port)) {
-    return { status: 400, error: '飞牛认证回调地址不属于 WebDrop 服务端口' };
+  if (!['http:', 'https:'].includes(callback.protocol)) {
+    return { status: 400, error: '飞牛认证回调地址无效' };
   }
-  const forwardedHost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
-  try {
-    if (forwardedHost && callback.hostname !== new URL(`http://${forwardedHost}`).hostname) {
-      return { status: 400, error: '飞牛认证回调主机不匹配' };
-    }
-  } catch {
+  const gatewayHostname = headerHostname(req.headers['x-forwarded-host'] || req.headers.host);
+  if (!gatewayHostname) {
     return { status: 400, error: '飞牛认证主机无效' };
+  }
+  const directPortCallback = Number(callback.port || 0) === Number(cfg.port) && callback.hostname === gatewayHostname;
+  const configuredOrigin = trustedOrigins(cfg).has(callback.origin);
+  const reverseProxyCallback = callback.protocol === 'https:' && siblingSubdomain(callback.hostname, gatewayHostname);
+  if (!directPortCallback && !configuredOrigin && !reverseProxyCallback) {
+    return { status: 400, error: '飞牛认证回调地址不属于 WebDrop 服务端口' };
   }
   return {
     fnosUserId,

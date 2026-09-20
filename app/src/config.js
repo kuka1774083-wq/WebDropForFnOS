@@ -16,6 +16,8 @@ const DEFAULTS = {
   stagingThresholdBytes: 10 * 1024 ** 2,
   jobIntervalMs: 60000,
   tempUserInactiveDays: 30,
+  // 反向代理使用的公开访问源，逗号分隔，例如 https://drop.example.com。
+  fnosTrustedOrigins: '',
 };
 
 function envKey(key) {
