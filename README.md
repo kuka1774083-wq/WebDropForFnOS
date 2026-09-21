@@ -2,7 +2,7 @@
 
 [GitHub 仓库](https://github.com/kuka1774083-wq/WebDropForFnOS)
 
-这是 WebDrop 的飞牛 fnOS 原生应用包工程。它使用飞牛 Node.js v22 运行时直接启动 WebDrop，不安装或创建 Docker 容器；运行数据保存在应用自己的 `TRIM_PKGVAR/config` 与 `TRIM_PKGVAR/data` 目录中。
+这是 [WebDrop](https://github.com/kuka1774083-wq/WebDrop) 的飞牛 fnOS 原生应用包工程。它使用飞牛 Node.js v22 运行时直接启动 WebDrop，不安装或创建 Docker 容器；运行数据保存在应用自己的 `TRIM_PKGVAR/config` 与 `TRIM_PKGVAR/data` 目录中。
 
 - 作者项目主页：https://github.com/kuka1774083-wq/WebDropForFnOS
 - 发布者主页：https://space.bilibili.com/41158746?spm_id_from=333.1007.0.0
